@@ -4,8 +4,15 @@ const { series, parallel, watch } = require("gulp");
 var gulp = require("gulp");
 var sass = require("gulp-sass")(require("sass"));
 var concat = require("gulp-concat");
-var uglify = require("gulp-uglify");
 var cleanCss = require("gulp-clean-css");
+var browserify = require("browserify");
+var source = require("vinyl-source-stream");
+
+// Copy html file
+function copyFiles() {
+  return gulp.src("./src/*.html").pipe(gulp.dest("./dist"));
+}
+exports.copyFiles = copyFiles;
 
 // Compile CSS
 function buildStyles() {
@@ -20,17 +27,16 @@ exports.buildStyles = buildStyles;
 
 // Combine JS files
 function combineJS() {
-  return gulp
-    .src("./src/js/*.js")
-    .pipe(concat("all.js")) // combine js files
-    .pipe(uglify()) // minify js file
-    .pipe(gulp.dest("./dist/js"));
+  return browserify("./src/js/main.js")
+    .bundle()
+    .on("error", function () {})
+    .pipe(source("bundle.js"))
+    .pipe(gulp.dest("./dist/js/"));
 }
 exports.combineJS = combineJS;
 
 exports.default = function () {
-  // You can use a single task
+  watch("./src/*.html", series(copyFiles));
   watch("./src/sass/**/*.scss", series(buildStyles));
-  // Or a composed task
   watch("./src/js/*.js", series(combineJS));
 };
